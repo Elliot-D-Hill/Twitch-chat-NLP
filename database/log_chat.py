@@ -2,23 +2,16 @@
 
 import socket
 import re
-<<<<<<< HEAD
 import pandas as pd
-=======
->>>>>>> a56bd8fbd408d7371cfc37d19e28ba914a52a2a1
 import database_insert
 from datetime import datetime
 from emoji import demojize
 
 
-<<<<<<< HEAD
 def log_chat(server, port, nickname, token, channel, max_batch_size):
 
     # a temporary list of comments data
     dict_list = []
-=======
-def log_chat(server, port, nickname, token, channel):
->>>>>>> a56bd8fbd408d7371cfc37d19e28ba914a52a2a1
 
     sock = socket.socket()
 
@@ -40,17 +33,12 @@ def log_chat(server, port, nickname, token, channel):
             now = datetime.now()
             # format data: dd/mm/YY H:M:S
             dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
-
             response = demojize(response)
-<<<<<<< HEAD
             # capture username, channel, datetime, and user comment
-=======
->>>>>>> a56bd8fbd408d7371cfc37d19e28ba914a52a2a1
             regex = ':(.*)\\!.*@.*\\.tmi\\.twitch\\.tv PRIVMSG #(.*) :(.*)'
 
             # enforce pattern matching for regular expression
             if re.search(regex, response) is not None:
-<<<<<<< HEAD
 
                 sentiment = None  # FIXME
 
@@ -83,12 +71,3 @@ def log_chat(server, port, nickname, token, channel):
                     sentiment)  # FIXME
 
 # sock.close() ??? #FIXME
-=======
-                username, channel, comment = re.search(
-                    regex, response).groups()
-                comment = comment.rstrip('\r')
-                database_insert.comment(username, channel, dt_string, comment)
-                print(username, channel, dt_string, comment)  # FIXME
-
-# sock.close()
->>>>>>> a56bd8fbd408d7371cfc37d19e28ba914a52a2a1
