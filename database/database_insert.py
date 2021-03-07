@@ -5,10 +5,9 @@ from io import StringIO
 from config import config
 
 
-def multiple_rows(df, table, columns):  # FIXME
+def multiple_rows(df, table, columns):
     # Save the dataframe to disk as a csv file
     buffer = StringIO()
-    # df.to_csv(buffer, index_label='id', header=False) #FIXME
     df.to_csv(buffer, index=False, header=False)
     buffer.seek(0)
     try:

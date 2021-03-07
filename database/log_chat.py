@@ -51,7 +51,8 @@ def log_chat(server, port, nickname, token, channel, max_batch_size):
                     "channel": channel,
                     "datetime": dt_string,
                     "comment": comment,
-                    "sentiment": sentiment}
+                    "sentiment": sentiment,
+                    "labeler": labeler}
 
                 dict_list.append(comment_dict)
 
