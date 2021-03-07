@@ -1,4 +1,3 @@
-#!/usr/bin/python
 
 import socket
 import re
@@ -8,26 +7,23 @@ from datetime import datetime
 from emoji import demojize
 
 
-def log_chat(server, port, nickname, token, channel, max_batch_size):
-
-    # a temporary list of comments data
-    dict_list = []
-
-    sock = socket.socket()
+def log_chat(db, server, port, nickname, token, channel, max_batch_size):
 
     # connect socket to Twitch
+    sock = socket.socket()
     sock.connect((server, port))
 
     sock.send(f"PASS {token}\n".encode('utf-8'))
     sock.send(f"NICK {nickname}\n".encode('utf-8'))
     sock.send(f"JOIN {channel}\n".encode('utf-8'))
 
+    # a temporary list of comments data
+    dict_list = []
     while True:
         response = sock.recv(2048).decode('utf-8')
 
         if response.startswith('PING'):
             sock.send("PONG\n".encode('utf-8'))
-
         elif len(response) > 0:
             # datetime object containing current date and time
             now = datetime.now()
@@ -36,12 +32,10 @@ def log_chat(server, port, nickname, token, channel, max_batch_size):
             response = demojize(response)
             # capture username, channel, datetime, and user comment
             regex = ':(.*)\\!.*@.*\\.tmi\\.twitch\\.tv PRIVMSG #(.*) :(.*)'
-
             # enforce pattern matching for regular expression
             if re.search(regex, response) is not None:
-
                 sentiment = None  # FIXME
-
+                labeler = None  # FIXME
                 username, channel, comment = re.search(
                     regex, response).groups()
                 comment = comment.rstrip('\r')
@@ -58,9 +52,9 @@ def log_chat(server, port, nickname, token, channel, max_batch_size):
 
                 if len(dict_list) >= max_batch_size:
                     comment_batch = pd.DataFrame.from_dict(dict_list)
-                    database_insert.multiple_rows(
-                        df=comment_batch,
-                        table="chat_logs",
+                    db.insert_rows(
+                        dataframe=comment_batch,
+                        tablename="chat_logs",
                         columns=tuple(comment_dict.keys()))
                     dict_list = []
 
@@ -69,6 +63,5 @@ def log_chat(server, port, nickname, token, channel, max_batch_size):
                     channel,
                     dt_string,
                     comment,
-                    sentiment)  # FIXME
-
-# sock.close() ??? #FIXME
+                    sentiment,
+                    labeler)  # FIXME

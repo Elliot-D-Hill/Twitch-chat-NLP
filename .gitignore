@@ -89,10 +89,8 @@ target/
 .mypy_cache/
 
 # database info
-<<<<<<< HEAD
 database.ini
 
 /database/__pycache__/
-=======
-database.ini
->>>>>>> a56bd8fbd408d7371cfc37d19e28ba914a52a2a1
+
+/notebooks/test.ipynb/
