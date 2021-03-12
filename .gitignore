@@ -94,3 +94,6 @@ database.ini
 /database/__pycache__/
 
 /notebooks/test.ipynb/
+
+# FIXME
+/data_pipeline/

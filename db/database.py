@@ -1,6 +1,4 @@
-#!/usr/bin/python3
-
-from config import config
+from configparser import ConfigParser
 from io import StringIO
 import psycopg2
 import pandas as pd
@@ -9,11 +7,27 @@ import pandas as pd
 class Database:
     def __init__(self, filename, section):
         # read database configuration
-        self._params = config(filename, section)
+        self._params = self.config(filename, section)
         # connect to the PostgreSQL database
         self.conn = psycopg2.connect(**self._params)
         # create a new cursor
         self._cursor = self.conn.cursor()
+
+    def config(self, filename, section):
+        # create a parser
+        parser = ConfigParser()
+        # read config file
+        parser.read(filename)
+        # get section, default to PostgreSQL
+        db = {}
+        if parser.has_section(section):
+            params = parser.items(section)
+            for param in params:
+                db[param[0]] = param[1]
+        else:
+            raise Exception(
+                'Section {0} not found in the {1} file'.format(section, filename))
+        return db
 
     def __enter__(self):
         return self
@@ -50,15 +64,15 @@ class Database:
         self.cursor.execute(sql, params or ())
         return self.fetchall()
 
-    def executeSQLFromFile(self, filename):
+    def execute_sql_file(self, filename):
         # Open and read the file as a single buffer
-        fd = open(filename, 'r')
-        sqlFile = fd.read()
-        fd.close()
+        f = open(filename, 'r')
+        sql_file = f.read()
+        f.close()
         # all SQL commands (split on ';')
-        sqlCommands = sqlFile.strip(';').replace('\n', '').split(";")
+        sql_commands = sql_file.strip(';').replace('\n', '').split(";")
         # Execute every command from the input file
-        for command in sqlCommands:
+        for command in sql_commands:
             try:
                 self.execute(command)
             except (Exception, psycopg2.DatabaseError) as error:
@@ -68,7 +82,7 @@ class Database:
         # create tables in the PostgreSQL database
         try:
             # create tables
-            self.executeSQLFromFile(filename)
+            self.execute_sql_file(filename)
             # commit the changes
             self.commit()
         except (Exception, psycopg2.DatabaseError) as error:

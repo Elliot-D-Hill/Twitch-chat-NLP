@@ -1,9 +1,6 @@
 #!/usr/bin/python3
 
-import query_table
 import log_chat
-import create_tables
-import query_table
 import database
 
 server = 'irc.chat.twitch.tv'
@@ -11,11 +8,11 @@ port = 6667
 nickname = 'maieutikos'
 token = 'oauth:dhvv3cupwmqz96goat55gpaxgcaxba'
 channel = '#maieutikos'
-max_batch_size = 3  # comment batch size before inserting
+max_batch_size = 3  # comment batch size before insertion
 
 db = database.Database(filename='database.ini', section='postgresql')
 
-# create PostgreSQL database tables, if they don't already exist
+# create tables in database, if they don't already exist
 db.create_tables(filename='twitch_chat_tables.sql')
 
 sql_table = "chat_logs"
