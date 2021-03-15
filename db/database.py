@@ -108,7 +108,7 @@ class Database:
             self.close()
             return 1
 
-    def create_df_from_table(self, sql_query, table):
+    def create_df_from_table(self, sql_query):
         # query comments from the comments table
         try:
             # execute the SELECT statement
@@ -122,3 +122,8 @@ class Database:
             return df
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
+
+    def get_table_col_names(self, table_name):
+        self.execute(f"Select * FROM {table_name} LIMIT 0")
+        col_names = [desc[0] for desc in self.cursor.description]
+        return col_names
