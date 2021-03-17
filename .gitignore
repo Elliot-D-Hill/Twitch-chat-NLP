@@ -86,10 +86,9 @@ config.py
 
 /db/__pycache__/
 
-/notebooks/test.ipynb/
+/notebooks/
+
+/venv/
 
 # FIXME
 /data_pipeline/
-
-# FIXME
-/notebooks/

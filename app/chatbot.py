@@ -9,11 +9,12 @@ from datetime import datetime
 
 class ChatBot:
     def __init__(self, database, username, token, channels):
-        self.server = 'irc.chat.twitch.tv'
-        self.port = 6667
+        self.database = database
         self.username = username
         self.token = token
         self.channels = channels
+        self.server = 'irc.chat.twitch.tv'
+        self.port = 6667
         self.irc_socket = None
 
     def send_command(self, command):
@@ -24,7 +25,7 @@ class ChatBot:
     def send_privmsg(self, channel, text):
         self.send_command(f'PRIVMSG #{channel} :{text}')
 
-    def connect(self, database, max_batch_size):
+    def connect(self, max_batch_size):
         # connect socket to Twitch
         self.irc_socket = socket.socket()
         self.irc_socket.connect((self.server, self.port))
@@ -34,10 +35,11 @@ class ChatBot:
             self.send_command(f'JOIN #{channel}')
             self.send_privmsg(
                 channel, 'TwitchBot online. Hacking into the mainframe...')
-        self.log_messages(database, max_batch_size)
+        self.log_messages(max_batch_size)
 
     def handle_response(self, response):
         msg = Message(response)
+        # captures username, channel, and comment from message
         regex = ':(.*)\\!.*@.*\\.tmi\\.twitch\\.tv PRIVMSG #(.*) :(.*)'
         if re.search(regex, msg.text):
             msg.parse(regex)
@@ -45,20 +47,20 @@ class ChatBot:
         else:
             return None
 
-    def log_messages(self, database, max_batch_size):
+    def log_messages(self, max_batch_size):
         table_name = 'chat_logs'
+        table_col_names = self.database.get_table_col_names(table_name)
         # a temporary list of message data
         comment_batch = []
         while True:
             # get response from Twitch socket
             response = self.irc_socket.recv(2048).decode()
             print(response)
+            msg = self.handle_response(response)
             if response.startswith('PING'):
                 self.irc_socket.send("PONG\n".encode('utf-8'))
             # true if valid comment
-            elif len(response) > 0 and self.handle_response(response):
-                msg = self.handle_response(response)
-                table_col_names = database.get_table_col_names(table_name)
+            elif len(response) > 0 and msg:
                 # create row for database insertion
                 message_dict = {key: msg.data[key]
                                 for key in table_col_names[1:]}
@@ -68,7 +70,7 @@ class ChatBot:
                 if len(comment_batch) >= max_batch_size:
                     message_batch = pd.DataFrame.from_dict(comment_batch)
                     # add comment batch to database
-                    database.insert_rows(
+                    self.database.insert_rows(
                         dataframe=message_batch,
                         tablename=table_name,
                         columns=tuple(message_dict.keys()))
@@ -81,30 +83,32 @@ class Message:
         self.data = {'date_time': None,
                      'username': None,
                      'channel': None,
+                     'sentiment': None,
+                     'labeler': None,
+                     'receiver': None,
                      'irc_command': None,
                      'irc_args': None,
                      'comment': None,
                      'comment_command': None,
                      'comment_args': None}
 
-    def parse_comment(self, comment):
+    def parse_comment(self):
         # convert emojis to text
-        comment = demojize(comment)
-        pass  # FIXME
+        self.data['comment'] = demojize(self.data['comment'])
+        self.data['sentiment'] = None  # FIXME
+        self.data['labeler'] = None  # FIXME
+        self.data['receiver'] = None  # FIXME
 
     def parse(self, regex):
         # enforce pattern matching for regular expression
         if re.search(regex, self.text):
             username, channel, comment = re.search(regex, self.text).groups()
             comment = comment.rstrip('\r')
-            # FIXME do this in a loop
             self.data['date_time'] = self.get_current_time()
             self.data['username'] = username
             self.data['channel'] = channel
             self.data['comment'] = comment
-            self.data['sentiment'] = None  # FIXME
-            self.data['labeler'] = None  # FIXME
-            self.data['receiver'] = None  # FIXME
+            self.parse_comment()
 
     def get_current_time(self):
         now = datetime.now()

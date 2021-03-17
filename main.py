@@ -7,7 +7,8 @@ import app.chatbot
 username = 'maieutikos'
 token = config.OAUTH_TOKEN
 channels = ['maieutikos']
-max_batch_size = 1  # comment batch size before database insertion
+# comment batch size before database insertion
+max_batch_size = 1  # hint: larger batch sizes are more efficient
 
 # initialize PostgreSQL database
 twitch_db = db.database.Database(
@@ -20,4 +21,4 @@ bot = app.chatbot.ChatBot(twitch_db, username, token, channels)
 twitch_db.create_tables(filename='db/twitch_chat_tables.sql')
 
 # connect to twitch chat and log user messages
-bot.connect(twitch_db, max_batch_size)
+bot.connect(max_batch_size)
