@@ -78,17 +78,24 @@ target/
 # Mypy cache
 .mypy_cache/
 
+/db/__pycache__/
+
+/notebooks/
+
+# virtual environment
+/venv/
+
+# directories under development
+/data_pipeline/
+
+# postgres data
+/pgdata
+
+# sensitive information
+secrets.env
+
 # database info
 database.ini
 
 # oauth token
 config.py
-
-/db/__pycache__/
-
-/notebooks/
-
-/venv/
-
-# FIXME
-/data_pipeline/
