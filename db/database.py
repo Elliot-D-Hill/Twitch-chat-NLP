@@ -1,17 +1,20 @@
 from configparser import ConfigParser
 from io import StringIO
+from pandas import DataFrame
 import psycopg2
-import pandas as pd
+import time
 
 
 class Database:
     def __init__(self, filename, section):
         # read database configuration
         self._params = self.config(filename, section)
+        # number of reconnection attempts
+        self.max_retries = 5
         # connect to the PostgreSQL database
-        self.conn = psycopg2.connect(**self._params)
+        self._conn = self.connect()
         # create a new cursor
-        self._cursor = self.conn.cursor()
+        self._cursor = self._conn.cursor()
 
     def config(self, filename, section):
         # create a parser
@@ -29,6 +32,21 @@ class Database:
                 'Section {0} not found in the {1} file'.format(section, filename))
         return db
 
+    def connect(self):
+        retry_counter = 0
+        while retry_counter < self.max_retries:
+            try:
+                self._conn = psycopg2.connect(**self._params)
+                self._conn.autocommit = False
+                return self._conn
+            except psycopg2.OperationalError as error:
+                retry_counter += 1
+                print(
+                    f"Error {str(error).strip()}. Reconnection attempts: {retry_counter}")
+                time.sleep(5)
+            except (Exception, psycopg2.Error) as error:
+                raise error
+
     def __enter__(self):
         return self
 
@@ -37,7 +55,7 @@ class Database:
 
     @property
     def connection(self):
-        return self.conn
+        return self._conn
 
     @property
     def cursor(self):
@@ -65,13 +83,13 @@ class Database:
         return self.fetchall()
 
     def execute_sql_file(self, filename):
-        # Open and read the file as a single buffer
+        # open and read the file as a single buffer
         f = open(filename, 'r')
         sql_file = f.read()
         f.close()
         # all SQL commands (split on ';')
         sql_commands = sql_file.strip(';').replace('\n', '').split(";")
-        # Execute every command from the input file
+        # execute every command from the input file
         for command in sql_commands:
             try:
                 self.execute(command)
@@ -103,8 +121,8 @@ class Database:
             # commit the changes to the database
             self.commit()
         except (Exception, psycopg2.DatabaseError) as error:
-            print("Error: %s" % error)
-            self.conn.rollback()
+            print(f"Error: {error}")
+            self._conn.rollback()
             self.close()
             return 1
 
@@ -118,7 +136,7 @@ class Database:
             # get corresponding column names
             column_names = [desc[0] for desc in self.cursor.description]
             # convert table to dataframe
-            df = pd.DataFrame(rows, columns=column_names)
+            df = DataFrame(rows, columns=column_names)
             return df
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
