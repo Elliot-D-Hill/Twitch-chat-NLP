@@ -1,0 +1,23 @@
+version: "3"
+services:
+  db:
+    image: postgres
+    container_name: pg-docker
+    # open port so host machine can access
+    ports:
+      - "5432:5432"
+    # configure Postgres environment variables
+    environment:
+      - POSTGRES_USER=Elliot
+      - POSTGRES_DB=twitch
+      - POSTGRES_PASSWORD={MY_PASSWORD}
+    # bind mount volume for Postgres data
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+    restart: always
+
+  python:
+    container_name: py-docker
+    build: .
+    depends_on:
+      - db
